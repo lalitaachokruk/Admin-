@@ -163,7 +163,7 @@
                         <th>ด่าน 3 (ต่ำ)</th>
                         <th>บอสไฟต์</th>
                         <th>เพชรรวม 💎</th>
-                    </tr>
+                        <th>การประเมิน</th> </tr>
                 </thead>
                 <tbody id="tableBody">
                     </tbody>
@@ -178,21 +178,34 @@
         // ฟังก์ชันดึงและสร้างตาราง
         async function fetchScores() {
             try {
-                // ขอข้อมูลแบบเจาะจงคะแนน (?action=getScores)
                 let response = await fetch(gasUrl + "?action=getScores");
                 let responseData = await response.json();
                 
                 if(responseData.status === "success") {
                     let data = responseData.data;
-                    
-                    // กลับด้าน Array ให้คนล่าสุดขึ้นข้างบน (ถ้าอยากให้เรียงลำดับแบบเดิมให้เอา .reverse() ออกครับ)
-                    data.reverse(); 
+                    data.reverse(); // เอาคนล่าสุดขึ้นก่อน
 
                     let tbody = document.getElementById('tableBody');
-                    // สร้าง HTML ตารางใหม่ทั้งหมดเก็บไว้ในตัวแปรก่อน แล้วค่อยยัดลงไปทีเดียว (ลดอาการจอกะพริบ)
                     let newHtml = '';
                     
                     data.forEach((row, index) => {
+                        
+                        // --- ส่วนที่เพิ่มใหม่: ระบบประเมินจุดอ่อนให้คุณครู ---
+                        let weaknesses = [];
+                        // ด่าน 1 และ 2 เกณฑ์ผ่านคือ 10
+                        if (row.scoreLvl1 < 10) weaknesses.push("กลาง");
+                        if (row.scoreLvl2 < 10) weaknesses.push("สูง");
+                        // ด่าน 3 มี 2 รอบ (ต่ำเดี่ยว+ต่ำคู่) เกณฑ์ผ่านรวมคือ 20 (รอบละ 10)
+                        if (row.scoreLvl3 < 20) weaknesses.push("ต่ำ"); 
+                        
+                        let feedback = "";
+                        if (weaknesses.length === 0) {
+                            feedback = "<span style='color: #4caf50; font-weight: bold; background: #e8f5e9; padding: 4px 10px; border-radius: 15px;'>✅ ยอดเยี่ยม</span>";
+                        } else {
+                            feedback = "<span style='color: #d32f2f; font-weight: bold; background: #ffebee; padding: 4px 10px; border-radius: 15px;'>ซ่อม: อักษร" + weaknesses.join(", ") + "</span>";
+                        }
+                        // ------------------------------------------------
+
                         newHtml += `
                             <tr>
                                 <td>${index + 1}</td>
@@ -202,13 +215,15 @@
                                 <td>${row.scoreLvl3 || '0'}</td>
                                 <td>${row.scoreBoss || '0'}</td>
                                 <td class="total-score">${row.totalScore || '0'}</td>
+                                
+                                <td>${feedback}</td>
                             </tr>
                         `;
                     });
 
                     tbody.innerHTML = newHtml;
 
-                    // อัปเดตเวลาล่าสุด
+                    // อัปเดตเวลา
                     let now = new Date();
                     let timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                     document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + timeString;
@@ -222,13 +237,8 @@
             }
         }
 
-        // 1. ดึงข้อมูลครั้งแรกทันทีที่เปิดหน้าเว็บ
         fetchScores();
-
-        // 2. ตั้งเวลาดึงข้อมูลซ้ำอัตโนมัติ ทุกๆ 5 วินาที (5000 มิลลิวินาที)
         setInterval(fetchScores, 5000);
-
     </script>
-
 </body>
 </html>
