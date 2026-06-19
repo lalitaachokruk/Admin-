@@ -5,43 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Admin Dashboard - ตะลุยป่าไตรยางศ์</title>
     
-    <link rel="icon" href="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png">
+    <!-- อัปเดตโลโก้ใหม่ -->
+    <link rel="icon" href="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ระบบครู">
     
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- 👇 เพิ่มไลบรารีสำหรับถ่ายภาพหน้าจอทำใบประกาศ 👇 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root { --primary: #7f0101; --bg-color: #f5f5f5; }
         * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
         
+        /* แก้ปัญหาหน้าจอเลื่อน ให้พอดีกับหน้าจอ 100% */
         body { 
             background-color: var(--bg-color); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            padding: 10px 20px; 
+            min-height: 100dvh; 
+            padding: 20px; 
+            overflow: hidden; /* ล็อกหน้าจอไม่ให้เลื่อน */
         }
         
         .container { 
             width: 100%; 
-            max-width: 1100px; /* ขยายกล่องนิดนึงให้ตารางพอดี */
+            max-width: 1100px; 
             background: #ffffff; 
             border-radius: 12px; 
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); 
-            padding: 40px; 
-            margin-top: 0px; 
-            margin-bottom: 20px;
+            padding: 30px 40px; 
+            margin: auto 0; /* จัดให้อยู่กึ่งกลางพอดี */
         }
         
-        .auth-section { max-width: 400px; margin: 20px auto; text-align: center; }
+        .auth-section { max-width: 400px; margin: 0 auto; text-align: center; }
         .auth-section h2 { color: var(--primary); margin-bottom: 20px; font-weight: 900; font-size: 28px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { font-weight: bold; color: #333; display: block; margin-bottom: 5px; font-size: 14px; }
@@ -54,7 +54,7 @@
         .status-msg { margin-top: 15px; font-weight: bold; display: none; font-size: 14px; }
 
         #dashboard-section { display: none; }
-        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-container h2 { color: var(--primary); font-size: 24px; font-weight: 900; }
         .live-status { text-align: right; }
         .badge-live { background-color: #d32f2f; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; animation: pulse 1.5s infinite; display: inline-flex; align-items: center; gap: 8px; }
@@ -62,11 +62,19 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
         
         table { width: 100%; border-collapse: collapse; text-align: center; }
-        th { background-color: var(--primary); color: white; padding: 12px; white-space: nowrap; }
+        th { background-color: var(--primary); color: white; padding: 12px; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
         td { padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap; vertical-align: middle; }
-        .table-responsive { overflow-x: auto; width: 100%; border-radius: 8px; }
         
-        /* ปุ่มโหลดใบประกาศ */
+        /* ทำให้ตารางมีแถบเลื่อนถ้าข้อมูลเยอะเกินไป */
+        .table-responsive { 
+            overflow-x: auto; 
+            overflow-y: auto; 
+            max-height: 55vh; /* ล็อกความสูงตาราง ให้เลื่อนสกอร์แค่ในตาราง */
+            width: 100%; 
+            border-radius: 8px; 
+            border: 1px solid #eee;
+        }
+        
         .btn-cert { background: #ff9800; color: white; border: 2px solid #e65100; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-cert:hover { transform: scale(1.05); background: #e65100; }
 
@@ -76,23 +84,19 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: #fff; padding: 30px; border-radius: 15px; max-width: 650px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; color: #d32f2f; cursor: pointer; transition: 0.2s; }
-        .close-btn:hover { transform: scale(1.2); }
         
         .manual-step { text-align: left; margin-bottom: 20px; background: #fdfdfd; padding: 15px; border-radius: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
         .manual-step h3 { color: var(--primary); font-size: 18px; margin-bottom: 8px; }
         .manual-step ul { padding-left: 20px; color: #444; font-size: 15px; line-height: 1.6; }
 
-        .footer-credit { margin-top: auto; padding-bottom: 20px; text-align: center; color: #888888; font-size: 14px; line-height: 1.6; letter-spacing: 0.5px; }
+        .footer-credit { margin-top: 15px; text-align: center; color: #888888; font-size: 14px; line-height: 1.6; letter-spacing: 0.5px; }
         .admin-logo { width: 110px; max-width: 40%; height: auto; margin: 0 auto 15px auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
         
-        /* ================= สไตล์สำหรับเทมเพลตใบประกาศ (ซ่อนไว้เสมอ) ================= */
+        /* ================= ซ่อมบั๊กรูปขาวล้วน ================= */
         #cert-template {
             position: fixed;
-            z-index: -100;
-            opacity: 0;
-            pointer-events: none;
-            top: 0;
-            left: 0;
+            top: -9999px; /* ดันไปซ่อนนอกจอแทนการใช้ opacity: 0 ป้องกันภาพขาว */
+            left: -9999px;
             width: 1000px;
             height: 700px;
             background: url('https://img.magnific.com/free-vector/forest-scene-with-various-forest-trees_1308-57640.jpg?semt=ais_hybrid&w=740&q=80') center/cover no-repeat;
@@ -125,20 +129,21 @@
         .cert-sign { border-top: 2px solid #333; padding-top: 10px; min-width: 300px; font-size: 28px; font-weight: bold; color: #7f0101; margin-bottom: 5px; }
 
         @media (max-width: 768px) { 
-            .container { padding: 20px; margin-top: 20px; }
+            body { overflow: auto; } /* คืนค่าเลื่อนจอให้มือถือเครื่องเล็ก */
+            .container { padding: 20px; margin: 10px 0; }
             .header-container { flex-direction: column; text-align: center; } 
             .live-status { text-align: center; margin-top: 10px; } 
-            .auth-section h2 { font-size: 24px; }
-            .manual-btn { bottom: 15px; right: 15px; padding: 8px 15px; font-size: 14px; }
+            .table-responsive { max-height: none; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Template ใบประกาศ (ซ่อนไว้สำหรับดึงรูป) -->
+    <!-- Template ใบประกาศ -->
     <div id="cert-template">
         <div class="cert-inner">
-            <img src="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" class="cert-logo">
+            <!-- อัปเดตโลโก้ใหม่บนใบประกาศ -->
+            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" class="cert-logo">
             <div class="cert-title">เกียรติบัตรเชิดชูเกียรติ</div>
             <div class="cert-subtitle">ขอมอบเกียรติบัตรฉบับนี้เพื่อแสดงว่า</div>
             <div id="cert-s-name" class="cert-name">ชื่อ นามสกุล</div>
@@ -165,20 +170,12 @@
                 <ul>
                     <li>กดปุ่ม <b>"สร้างห้องเรียนใหม่"</b> ด้านล่างปุ่มเข้าสู่ระบบ</li>
                     <li>ตั้ง <b>"ชื่อผู้ใช้งาน (รหัสครู)"</b> เป็นตัวเลขสั้นๆ เช่น 111, 501 เพื่อให้นักเรียนพิมพ์ง่าย</li>
-                    <li>ตั้งรหัสผ่าน แล้วกดลงทะเบียน (ระบบจะสร้างฐานข้อมูลให้คุณครูอัตโนมัติ)</li>
+                    <li>ตั้งรหัสผ่าน แล้วกดลงทะเบียน</li>
                 </ul>
             </div>
             
             <div class="manual-step">
-                <h3>2. การให้นักเรียนเข้าเล่นเกม</h3>
-                <ul>
-                    <li>บอก <b>"ชื่อผู้ใช้งาน (รหัสครู)"</b> ให้นักเรียนทราบ (เช่น รหัสวันนี้คือ 111)</li>
-                    <li>นักเรียนกรอกรหัสนี้ก่อนเริ่มเกม คะแนนจะถูกส่งเข้าห้องของคุณครูโดยตรง</li>
-                </ul>
-            </div>
-            
-            <div class="manual-step">
-                <h3>3. การติดตามคะแนน & โหลดใบประกาศ</h3>
+                <h3>2. การติดตามคะแนน & โหลดใบประกาศ</h3>
                 <ul>
                     <li>เข้าสู่ระบบด้วยรหัสของคุณครู ระบบจะอัปเดตข้อมูลอัตโนมัติ (ไฟ 🔴 LIVE จะกะพริบ)</li>
                     <li>หากนักเรียนทำคะแนนผ่านเกณฑ์ จะมีปุ่ม <b style="color:#e65100;">"🎓 โหลดใบประกาศ"</b> ปรากฏขึ้น คุณครูสามารถกดเซฟเป็นรูปภาพส่งให้เด็กๆ ได้เลย!</li>
@@ -187,11 +184,12 @@
         </div>
     </div>
 
-    <!-- กล่องเนื้อหาหลัก (สีขาว) -->
+    <!-- กล่องเนื้อหาหลัก -->
     <div class="container">
         <!-- หน้า Login -->
         <div id="login-section" class="auth-section">
-            <img src="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" alt="Admin Logo" class="admin-logo">
+            <!-- อัปเดตโลโก้ใหม่ -->
+            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" alt="Admin Logo" class="admin-logo">
             <h2>🔒 เข้าสู่ระบบ</h2>
             <div class="input-group">
                 <label>ชื่อผู้ใช้งาน (รหัสครู)</label>
@@ -208,7 +206,7 @@
 
         <!-- หน้า Register (สร้างใหม่) -->
         <div id="register-section" class="auth-section" style="display: none;">
-            <img src="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" alt="Admin Logo" class="admin-logo">
+            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" alt="Admin Logo" class="admin-logo">
             <h2>📝 สร้างห้องเรียนใหม่</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 20px;">*ชื่อผู้ใช้ จะถูกนำไปให้เด็กกรอกก่อนเริ่มเกม</p>
             <div class="input-group">
@@ -246,9 +244,9 @@
                 </table>
             </div>
         </div>
-    </div> <!-- ปิดกล่องเนื้อหาหลัก -->
+    </div>
 
-    <!-- 👇 เครดิตจัดทำโดย (อยู่ล่างสุดเสมอ) 👇 -->
+    <!-- เครดิตจัดทำโดย -->
     <div class="footer-credit">
         💻 จัดทำโดย<br>
         นางสาวลลิตา โชครักษ์<br>
@@ -360,9 +358,8 @@
             } catch (err) { console.log(err); }
         }
 
-        // ระบบดาวน์โหลดใบประกาศ
+        // ระบบดาวน์โหลดใบประกาศ (แก้ไขปัญหาจอขาว)
         async function generateCert(studentName, score) {
-            // ใส่ข้อมูลลงในหน้าประกาศ
             document.getElementById('cert-s-name').innerText = studentName;
             document.getElementById('cert-s-score').innerText = `คะแนนสะสม: ${score} / 65 เพชร 💎`;
             document.getElementById('cert-t-name').innerText = teacherNameLabel;
@@ -374,13 +371,12 @@
                 didOpen: () => { Swal.showLoading() }
             });
 
-            // สร้างรูปจาก Div ที่ซ่อนไว้
             let certElement = document.getElementById('cert-template');
             try {
-                let canvas = await html2canvas(certElement, { scale: 2 });
+                // เพิ่ม useCORS: true เพื่อบังคับให้ดึงภาพจากลิงก์เว็บนอกได้
+                let canvas = await html2canvas(certElement, { scale: 2, useCORS: true, allowTaint: true });
                 let imgData = canvas.toDataURL("image/png");
                 
-                // ดาวน์โหลดรูป
                 let link = document.createElement('a');
                 link.download = `เกียรติบัตร_${studentName}.png`;
                 link.href = imgData;
@@ -415,7 +411,6 @@
                     ? "<span style='color: #4caf50; font-weight: bold;'>✅ ยอดเยี่ยม</span>" 
                     : "<span style='color: #d32f2f; font-weight: bold;'>ซ่อม: " + (weaknesses.length > 0 ? weaknesses.join(", ") : "บอสไฟต์") + "</span>";
 
-                // หากเด็กทำคะแนนผ่านเกณฑ์ จะมีปุ่มโหลดใบประกาศปรากฏ
                 let certBtn = (row.scoreLvl1 > 0 || row.scoreBoss > 0) 
                     ? `<button class="btn-cert" onclick="generateCert('${row.studentName}', ${row.totalScore})">🎓 โหลดใบประกาศ</button>` 
                     : `<span style="color:#aaa; font-size:12px;">ยังไม่จบภารกิจ</span>`;
