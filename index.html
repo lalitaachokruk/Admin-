@@ -265,38 +265,76 @@
             });
         }
 
-        // โหลด PDF (รายคน และ รวมทุกคน)
+        // ฟังก์ชันโหลด PDF แบบแยกเป็น "ตารางรวม" และ "เกียรติบัตรเดี่ยว"
         function exportPDF(type, index = null) {
-            // โหลดฟอนต์ภาษาไทย (Sarabun) เพื่อให้แสดงผลใน PDF ได้
-            const doc = new jsPDF();
+            // กำหนดขนาดกระดาษ (รวม=แนวตั้ง, เดี่ยว=แนวนอน)
+            const orientation = type === 'all' ? 'portrait' : 'landscape';
+            const doc = new jsPDF(orientation);
+            
+            // โหลดฟอนต์ภาษาไทย
             doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Sarabun', 'normal');
             doc.setFont('Sarabun');
             
-            doc.setFontSize(18);
-            doc.text("รายงานคะแนน ภารกิจตะลุยป่าไตรยางศ์", 14, 20);
-            doc.setFontSize(12);
-            doc.text(`ข้อมูล ณ วันที่: ${new Date().toLocaleDateString('th-TH')}`, 14, 28);
-            
-            let columns = ["ชื่อนักเรียน", "ด่าน 1", "ด่าน 2", "ด่าน 3", "บอสไฟต์", "รวม 💎"];
-            let rows = [];
-
             if (type === 'all') {
+                // ==========================================
+                // 1. โหลดแบบรวมทุกคน (ออกมาเป็นตาราง)
+                // ==========================================
+                doc.setFontSize(18);
+                doc.text("สรุปคะแนน ภารกิจตะลุยป่าไตรยางศ์", 14, 20);
+                doc.setFontSize(12);
+                doc.text(`ข้อมูล ณ วันที่: ${new Date().toLocaleDateString('th-TH')}`, 14, 28);
+                
+                let columns = ["ชื่อนักเรียน", "ด่าน 1", "ด่าน 2", "ด่าน 3", "บอสไฟต์", "รวมเพชร"];
+                let rows = [];
                 currentData.forEach(r => rows.push([r.studentName, r.scoreLvl1, r.scoreLvl2, r.scoreLvl3, r.scoreBoss, r.totalScore]));
-            } else {
-                let r = currentData[index];
-                rows.push([r.studentName, r.scoreLvl1, r.scoreLvl2, r.scoreLvl3, r.scoreBoss, r.totalScore]);
-            }
 
-            doc.autoTable({ 
-                head: [columns], 
-                body: rows,
-                startY: 35,
-                styles: { font: 'Sarabun', fontStyle: 'normal' },
-                headStyles: { fillColor: [127, 1, 1] } // สีแดงเลือดหมูตามธีม
-            });
-            
-            let fileName = type === 'all' ? 'สรุปคะแนน_ทุกคน.pdf' : `ใบประกาศ_${currentData[index].studentName}.pdf`;
-            doc.save(fileName);
+                doc.autoTable({ 
+                    head: [columns], body: rows, startY: 35,
+                    styles: { font: 'Sarabun', fontStyle: 'normal' },
+                    headStyles: { fillColor: [127, 1, 1] } 
+                });
+                doc.save('สรุปคะแนน_ทุกคน.pdf');
+
+            } else {
+                // ==========================================
+                // 2. โหลดรายคน (ออกมาเป็นเกียรติบัตรแนวนอน)
+                // ==========================================
+                let student = currentData[index];
+                
+                // วาดกรอบเกียรติบัตร 2 ชั้น (สีแดงเลือดหมู)
+                doc.setLineWidth(3);
+                doc.setDrawColor(127, 1, 1);
+                doc.rect(10, 10, 277, 190); // กรอบนอก
+                doc.setLineWidth(1);
+                doc.rect(14, 14, 269, 182); // กรอบใน
+
+                // ตกแต่งข้อความส่วนหัว
+                doc.setFontSize(26);
+                doc.setTextColor(127, 1, 1);
+                doc.text("เกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า", 148, 55, { align: "center" });
+
+                // ชื่อนักเรียน (ตัวใหญ่สุด)
+                doc.setFontSize(40);
+                doc.setTextColor(0, 0, 0);
+                doc.text(student.studentName, 148, 90, { align: "center" });
+
+                // ข้อความชื่นชม
+                doc.setFontSize(22);
+                doc.setTextColor(50, 50, 50);
+                doc.text("ได้ผ่านการพิชิตภารกิจ \"ตะลุยป่าไตรยางศ์\" สำเร็จยอดเยี่ยม", 148, 125, { align: "center" });
+                
+                // สรุปคะแนน
+                doc.setFontSize(18);
+                doc.setTextColor(230, 81, 0);
+                doc.text(`สะสมได้ทั้งหมด: ${student.totalScore} / 65 เพชร  |  คะแนนบอสไฟต์: ${student.scoreBoss} / 44`, 148, 145, { align: "center" });
+
+                // วันที่
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`ให้ไว้ ณ วันที่ ${new Date().toLocaleDateString('th-TH')}`, 148, 175, { align: "center" });
+
+                doc.save(`เกียรติบัตร_${student.studentName}.pdf`);
+            }
         }
 
         function renderTable(data) {
