@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Admin Dashboard - ตะลุยป่าไตรยางศ์</title>
     
-    <!-- อัปเดตโลโก้ใหม่ -->
     <link rel="icon" href="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" type="image/png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,21 +13,26 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
     <style>
         :root { --primary: #7f0101; --bg-color: #f5f5f5; }
         * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* แก้ปัญหาหน้าจอเลื่อน ให้พอดีกับหน้าจอ 100% */
+        /* ล็อกหน้าจอไม่ให้เลื่อนในมือถือ */
         body { 
             background-color: var(--bg-color); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            min-height: 100dvh; 
+            height: 100dvh; 
             padding: 20px; 
-            overflow: hidden; /* ล็อกหน้าจอไม่ให้เลื่อน */
+            overflow: hidden; 
         }
         
         .container { 
@@ -38,10 +42,13 @@
             border-radius: 12px; 
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); 
             padding: 30px 40px; 
-            margin: auto 0; /* จัดให้อยู่กึ่งกลางพอดี */
+            margin: auto 0;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* บังคับไม่ให้กล่องล้นจอ */
         }
         
-        .auth-section { max-width: 400px; margin: 0 auto; text-align: center; }
+        .auth-section { max-width: 400px; margin: auto; text-align: center; }
         .auth-section h2 { color: var(--primary); margin-bottom: 20px; font-weight: 900; font-size: 28px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { font-weight: bold; color: #333; display: block; margin-bottom: 5px; font-size: 14px; }
@@ -53,143 +60,40 @@
         button.btn-text { background: none; border: none; color: #1976d2; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; text-decoration: underline; width: 100%; }
         .status-msg { margin-top: 15px; font-weight: bold; display: none; font-size: 14px; }
 
-        #dashboard-section { display: none; }
-        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        #dashboard-section { display: none; flex-direction: column; height: 100%; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header-container h2 { color: var(--primary); font-size: 24px; font-weight: 900; }
-        .live-status { text-align: right; }
+        
         .badge-live { background-color: #d32f2f; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; animation: pulse 1.5s infinite; display: inline-flex; align-items: center; gap: 8px; }
         .badge-live::before { content: ''; width: 10px; height: 10px; background-color: #fff; border-radius: 50%; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
         
+        /* ให้ตารางเลื่อนได้ในตัวของมันเอง */
+        .table-responsive { overflow: auto; flex: 1; width: 100%; border-radius: 8px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; text-align: center; }
         th { background-color: var(--primary); color: white; padding: 12px; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
         td { padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap; vertical-align: middle; }
         
-        /* ทำให้ตารางมีแถบเลื่อนถ้าข้อมูลเยอะเกินไป */
-        .table-responsive { 
-            overflow-x: auto; 
-            overflow-y: auto; 
-            max-height: 55vh; /* ล็อกความสูงตาราง ให้เลื่อนสกอร์แค่ในตาราง */
-            width: 100%; 
-            border-radius: 8px; 
-            border: 1px solid #eee;
-        }
-        
         .btn-cert { background: #ff9800; color: white; border: 2px solid #e65100; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-cert:hover { transform: scale(1.05); background: #e65100; }
+        .btn-export-all { background: #2196f3; color: white; border: 2px solid #1976d2; border-radius: 6px; padding: 8px 15px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-export-all:hover { background: #1976d2; }
 
-        .manual-btn { position: fixed; bottom: 20px; right: 20px; background: #1976d2; color: white; border: 3px solid #115293; padding: 10px 20px; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 1000; transition: 0.2s; }
-        .manual-btn:hover { transform: scale(1.05); background: #115293; }
-        
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: #fff; padding: 30px; border-radius: 15px; max-width: 650px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; color: #d32f2f; cursor: pointer; transition: 0.2s; }
-        
-        .manual-step { text-align: left; margin-bottom: 20px; background: #fdfdfd; padding: 15px; border-radius: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
-        .manual-step h3 { color: var(--primary); font-size: 18px; margin-bottom: 8px; }
-        .manual-step ul { padding-left: 20px; color: #444; font-size: 15px; line-height: 1.6; }
-
-        .footer-credit { margin-top: 15px; text-align: center; color: #888888; font-size: 14px; line-height: 1.6; letter-spacing: 0.5px; }
+        .footer-credit { margin-top: 15px; text-align: center; color: #888888; font-size: 14px; line-height: 1.6; letter-spacing: 0.5px; flex-shrink: 0; }
         .admin-logo { width: 110px; max-width: 40%; height: auto; margin: 0 auto 15px auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
-        
-        /* ================= ซ่อมบั๊กรูปขาวล้วน ================= */
-        #cert-template {
-            position: fixed;
-            top: -9999px; /* ดันไปซ่อนนอกจอแทนการใช้ opacity: 0 ป้องกันภาพขาว */
-            left: -9999px;
-            width: 1000px;
-            height: 700px;
-            background: url('https://img.magnific.com/free-vector/forest-scene-with-various-forest-trees_1308-57640.jpg?semt=ais_hybrid&w=740&q=80') center/cover no-repeat;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
-        .cert-inner {
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.93);
-            border: 12px double #7f0101;
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            text-align: center;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-        }
-        .cert-logo { position: absolute; top: 30px; left: 30px; width: 120px; }
-        .cert-title { font-size: 55px; color: #7f0101; font-weight: 900; margin-bottom: 10px; letter-spacing: 2px; }
-        .cert-subtitle { font-size: 26px; color: #555; margin-bottom: 30px; }
-        .cert-name { font-size: 65px; color: #d32f2f; font-weight: 900; margin-bottom: 25px; border-bottom: 3px solid #d32f2f; padding-bottom: 5px; min-width: 60%; }
-        .cert-desc { font-size: 28px; color: #333; margin-bottom: 15px; font-weight: bold; }
-        .cert-score { font-size: 32px; color: #f57f17; font-weight: bold; margin-bottom: 40px; }
-        .cert-footer { margin-top: 30px; text-align: center; }
-        .cert-sign { border-top: 2px solid #333; padding-top: 10px; min-width: 300px; font-size: 28px; font-weight: bold; color: #7f0101; margin-bottom: 5px; }
 
         @media (max-width: 768px) { 
-            body { overflow: auto; } /* คืนค่าเลื่อนจอให้มือถือเครื่องเล็ก */
-            .container { padding: 20px; margin: 10px 0; }
+            .container { padding: 15px; width: 100%; margin: auto 0; }
             .header-container { flex-direction: column; text-align: center; } 
-            .live-status { text-align: center; margin-top: 10px; } 
-            .table-responsive { max-height: none; }
+            .auth-section h2 { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Template ใบประกาศ -->
-    <div id="cert-template">
-        <div class="cert-inner">
-            <!-- อัปเดตโลโก้ใหม่บนใบประกาศ -->
-            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" class="cert-logo">
-            <div class="cert-title">เกียรติบัตรเชิดชูเกียรติ</div>
-            <div class="cert-subtitle">ขอมอบเกียรติบัตรฉบับนี้เพื่อแสดงว่า</div>
-            <div id="cert-s-name" class="cert-name">ชื่อ นามสกุล</div>
-            <div class="cert-desc">ได้พิชิตภารกิจ "ตะลุยป่าไตรยางศ์" สำเร็จลุล่วง</div>
-            <div id="cert-s-score" class="cert-score">คะแนนสะสม: 65 / 65 เพชร 💎</div>
-            <div class="cert-footer">
-                <div class="cert-sign">คุณครู<span id="cert-t-name"></span></div>
-                <div style="font-size: 20px; color: #555;">ผู้ควบคุมภารกิจ</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ปุ่มเปิดคู่มือมุมขวาล่าง -->
-    <button class="manual-btn" onclick="openManual()">📖 คู่มือการใช้งาน</button>
-
-    <!-- กล่อง Popup คู่มือ -->
-    <div id="manual-modal" class="modal-overlay" onclick="closeManual(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="closeManual()">&times;</span>
-            <h2 style="color: #7f0101; text-align: center; margin-bottom: 20px; font-weight: 900;">📖 คู่มือการใช้งานระบบ Admin</h2>
-            
-            <div class="manual-step">
-                <h3>1. การสร้างห้องเรียนใหม่ (สำหรับครูครั้งแรก)</h3>
-                <ul>
-                    <li>กดปุ่ม <b>"สร้างห้องเรียนใหม่"</b> ด้านล่างปุ่มเข้าสู่ระบบ</li>
-                    <li>ตั้ง <b>"ชื่อผู้ใช้งาน (รหัสครู)"</b> เป็นตัวเลขสั้นๆ เช่น 111, 501 เพื่อให้นักเรียนพิมพ์ง่าย</li>
-                    <li>ตั้งรหัสผ่าน แล้วกดลงทะเบียน</li>
-                </ul>
-            </div>
-            
-            <div class="manual-step">
-                <h3>2. การติดตามคะแนน & โหลดใบประกาศ</h3>
-                <ul>
-                    <li>เข้าสู่ระบบด้วยรหัสของคุณครู ระบบจะอัปเดตข้อมูลอัตโนมัติ (ไฟ 🔴 LIVE จะกะพริบ)</li>
-                    <li>หากนักเรียนทำคะแนนผ่านเกณฑ์ จะมีปุ่ม <b style="color:#e65100;">"🎓 โหลดใบประกาศ"</b> ปรากฏขึ้น คุณครูสามารถกดเซฟเป็นรูปภาพส่งให้เด็กๆ ได้เลย!</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- กล่องเนื้อหาหลัก -->
     <div class="container">
-        <!-- หน้า Login -->
         <div id="login-section" class="auth-section">
-            <!-- อัปเดตโลโก้ใหม่ -->
-            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" alt="Admin Logo" class="admin-logo">
+            <img src="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" alt="Admin Logo" class="admin-logo">
             <h2>🔒 เข้าสู่ระบบ</h2>
             <div class="input-group">
                 <label>ชื่อผู้ใช้งาน (รหัสครู)</label>
@@ -204,9 +108,8 @@
             <div id="login-error" class="status-msg"></div>
         </div>
 
-        <!-- หน้า Register (สร้างใหม่) -->
         <div id="register-section" class="auth-section" style="display: none;">
-            <img src="https://i.postimg.cc/QdpZPdZ2/Chat-GPT-Image-19-m-y-2569-21-29-56.png" alt="Admin Logo" class="admin-logo">
+            <img src="https://i.postimg.cc/PfgtFc8D/Chat-GPT-Image-19-m-y-2569-21-33-38.png" alt="Admin Logo" class="admin-logo">
             <h2>📝 สร้างห้องเรียนใหม่</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 20px;">*ชื่อผู้ใช้ จะถูกนำไปให้เด็กกรอกก่อนเริ่มเกม</p>
             <div class="input-group">
@@ -222,52 +125,55 @@
             <div id="reg-error" class="status-msg"></div>
         </div>
 
-        <!-- หน้า Dashboard -->
         <div id="dashboard-section">
             <div class="header-container">
                 <h2>📊 กระดานคะแนน: ห้อง <span id="display-teacher"></span></h2>
-                <div class="live-status">
-                    <div class="badge-live">LIVE อัปเดตอัตโนมัติ</div>
-                    <div id="last-update" style="font-size: 12px; margin-top:5px; color:#666;">กำลังเชื่อมต่อ...</div>
+                <div style="display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-export-all" onclick="exportPDF('all')">📥 โหลด PDF รวมทุกคน</button>
+                    <div class="badge-live">LIVE</div>
                 </div>
             </div>
-            <button onclick="logout()" style="margin-bottom:15px; padding:8px 15px; background:#666; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">🚪 ออกจากระบบ</button>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:10px;">
+                <div id="last-update" style="font-size: 12px; color:#666;">กำลังเชื่อมต่อ Firebase...</div>
+                <button onclick="logout()" style="padding:6px 12px; background:#666; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">🚪 ออกจากระบบ</button>
+            </div>
             
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
-                            <th>ลำดับ</th><th>ชื่อนักเรียน</th><th>ด่าน 1</th><th>ด่าน 2</th><th>ด่าน 3</th><th>บอสไฟต์</th><th>รวม 💎</th><th>ประเมิน</th><th>รับรางวัล</th>
+                            <th>ลำดับ</th><th>ชื่อนักเรียน</th><th>ด่าน 1</th><th>ด่าน 2</th><th>ด่าน 3</th><th>บอสไฟต์</th><th>รวม 💎</th><th>ประเมิน</th><th>ใบประกาศ</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
-    </div>
-
-    <!-- เครดิตจัดทำโดย -->
-    <div class="footer-credit">
+    </div> <div class="footer-credit">
         💻 จัดทำโดย<br>
         นางสาวลลิตา โชครักษ์<br>
         โรงเรียนบ้านหาดส้มแป้น
     </div>
 
     <script>
-        // *** วาง URL Apps Script ของคุณตรงนี้ ***
-        const gasUrl = "https://script.google.com/macros/s/AKfycbxQHu86mWczbFPaJ_JGHih5nIHxMye7S01qevDns2KSYDs5_lHWVOIFqJ8TUHc15TfY/exec";
-        
-        let loggedInUser = "";
-        let loggedInPass = "";
-        let teacherNameLabel = "";
-        let refreshInterval;
+        // =================ตั้งค่า Firebase =================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCczlWwxXAbhXL_Fy_H34ehBSEsvSkOXPU",
+            authDomain: "triyang-quest-2a294.firebaseapp.com",
+            databaseURL: "https://triyang-quest-2a294-default-rtdb.asia-southeast1.firebasedatabase.app", // ลิงก์เชื่อมต่อฐานข้อมูล
+            projectId: "triyang-quest-2a294",
+            storageBucket: "triyang-quest-2a294.firebasestorage.app",
+            messagingSenderId: "662514531113",
+            appId: "1:662514531113:web:52936ffb956d3475af1538"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        function openManual() { document.getElementById('manual-modal').style.display = 'flex'; }
-        function closeManual(e) { 
-            if(!e || e.target.id === 'manual-modal' || e.target.className === 'close-btn') {
-                document.getElementById('manual-modal').style.display = 'none'; 
-            }
-        }
+        let loggedInUser = "";
+        let teacherNameLabel = "";
+        let currentData = []; // เก็บข้อมูลนักเรียนไว้ใช้สร้าง PDF
+        const { jsPDF } = window.jspdf;
 
         function toggleAuth(type) {
             document.getElementById('login-error').style.display = 'none';
@@ -281,6 +187,7 @@
             }
         }
 
+        // ระบบลงทะเบียนผ่าน Firebase
         async function attemptRegister() {
             let user = document.getElementById('reg-user').value.trim();
             let pass = document.getElementById('reg-pass').value.trim();
@@ -289,33 +196,31 @@
             if(!user || !pass) { errorDiv.innerText = "กรุณากรอกข้อมูลให้ครบถ้วน"; errorDiv.style.color = "#d32f2f"; errorDiv.style.display = "block"; return; }
             if(user.includes(" ")) { errorDiv.innerText = "ชื่อผู้ใช้ห้ามเว้นวรรคครับ"; errorDiv.style.color = "#d32f2f"; errorDiv.style.display = "block"; return; }
             
-            errorDiv.innerText = "กำลังสร้างห้องเรียนและชีตข้อมูล... ⏳";
+            errorDiv.innerText = "กำลังสร้างห้องเรียน... ⏳";
             errorDiv.style.color = "#ff9800";
             errorDiv.style.display = "block";
 
-            try {
-                let response = await fetch(gasUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: "register", username: user, password: pass })
-                });
-                let resData = await response.json();
-                
-                if(resData.status === "success") {
-                    errorDiv.innerText = "✅ " + resData.message;
-                    errorDiv.style.color = "#4caf50";
-                    setTimeout(() => { toggleAuth('login'); document.getElementById('login-user').value = user; }, 2000);
-                } else {
-                    errorDiv.innerText = "❌ " + resData.message;
+            let roomRef = db.ref('rooms/' + user);
+            roomRef.once('value').then(snapshot => {
+                if(snapshot.exists()) {
+                    errorDiv.innerText = "❌ รหัสครูนี้มีผู้ใช้งานแล้ว โปรดใช้รหัสอื่น";
                     errorDiv.style.color = "#d32f2f";
+                } else {
+                    roomRef.set({ password: pass, teacherName: "ครูรหัส " + user })
+                    .then(() => {
+                        errorDiv.innerText = "✅ สร้างห้องเรียนสำเร็จ!";
+                        errorDiv.style.color = "#4caf50";
+                        setTimeout(() => { toggleAuth('login'); document.getElementById('login-user').value = user; }, 2000);
+                    });
                 }
-            } catch (err) {
-                errorDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+            }).catch(e => {
+                errorDiv.innerText = "❌ เชื่อมต่อ Firebase ไม่สำเร็จ";
                 errorDiv.style.color = "#d32f2f";
-            }
+            });
         }
 
-        async function attemptLogin() {
+        // ระบบ Login และดึงข้อมูล Real-time จาก Firebase
+        function attemptLogin() {
             let user = document.getElementById('login-user').value.trim();
             let pass = document.getElementById('login-pass').value.trim();
             let errorDiv = document.getElementById('login-error');
@@ -326,97 +231,97 @@
             errorDiv.style.color = "#ff9800";
             errorDiv.style.display = "block";
 
-            try {
-                let response = await fetch(`${gasUrl}?action=login&username=${user}&password=${pass}`);
-                let resData = await response.json();
-                
-                if(resData.status === "success") {
-                    loggedInUser = user;
-                    loggedInPass = pass;
-                    teacherNameLabel = resData.teacherName;
-                    document.getElementById('display-teacher').innerText = teacherNameLabel;
-                    document.getElementById('login-section').style.display = 'none';
-                    document.getElementById('dashboard-section').style.display = 'block';
-                    
-                    renderTable(resData.data);
-                    refreshInterval = setInterval(fetchDataLive, 5000);
+            db.ref('rooms/' + user).once('value').then(snapshot => {
+                if(snapshot.exists()) {
+                    let data = snapshot.val();
+                    if(data.password === pass) {
+                        loggedInUser = user;
+                        teacherNameLabel = data.teacherName || user;
+                        document.getElementById('display-teacher').innerText = teacherNameLabel;
+                        document.getElementById('login-section').style.display = 'none';
+                        document.getElementById('dashboard-section').style.display = 'flex';
+                        
+                        // ฟังข้อมูลนักเรียนตลอดเวลา (Real-time update)
+                        db.ref('rooms/' + user + '/students').on('value', (snap) => {
+                            let studentsData = [];
+                            snap.forEach(child => { studentsData.push(child.val()); });
+                            currentData = studentsData; 
+                            renderTable(studentsData);
+                        });
+                    } else {
+                        errorDiv.innerText = "❌ รหัสผ่านไม่ถูกต้อง";
+                        errorDiv.style.color = "#d32f2f";
+                    }
                 } else {
-                    errorDiv.innerText = "❌ " + resData.message;
+                    errorDiv.innerText = "❌ ไม่พบห้องเรียนนี้ (ยังไม่ได้ลงทะเบียน)";
                     errorDiv.style.color = "#d32f2f";
                 }
-            } catch (err) {
-                errorDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+            }).catch(err => {
+                errorDiv.innerText = "❌ เชื่อมต่อ Firebase ไม่สำเร็จ";
                 errorDiv.style.color = "#d32f2f";
-            }
-        }
-
-        async function fetchDataLive() {
-            try {
-                let response = await fetch(`${gasUrl}?action=login&username=${loggedInUser}&password=${loggedInPass}`);
-                let resData = await response.json();
-                if(resData.status === "success") renderTable(resData.data);
-            } catch (err) { console.log(err); }
-        }
-
-        // ระบบดาวน์โหลดใบประกาศ (แก้ไขปัญหาจอขาว)
-        async function generateCert(studentName, score) {
-            document.getElementById('cert-s-name').innerText = studentName;
-            document.getElementById('cert-s-score').innerText = `คะแนนสะสม: ${score} / 65 เพชร 💎`;
-            document.getElementById('cert-t-name').innerText = teacherNameLabel;
-
-            Swal.fire({
-                title: 'กำลังจัดเตรียมใบประกาศ...',
-                text: 'กรุณารอสักครู่',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading() }
             });
+        }
 
-            let certElement = document.getElementById('cert-template');
-            try {
-                // เพิ่ม useCORS: true เพื่อบังคับให้ดึงภาพจากลิงก์เว็บนอกได้
-                let canvas = await html2canvas(certElement, { scale: 2, useCORS: true, allowTaint: true });
-                let imgData = canvas.toDataURL("image/png");
-                
-                let link = document.createElement('a');
-                link.download = `เกียรติบัตร_${studentName}.png`;
-                link.href = imgData;
-                link.click();
+        // โหลด PDF (รายคน และ รวมทุกคน)
+        function exportPDF(type, index = null) {
+            // โหลดฟอนต์ภาษาไทย (Sarabun) เพื่อให้แสดงผลใน PDF ได้
+            const doc = new jsPDF();
+            doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Sarabun', 'normal');
+            doc.setFont('Sarabun');
+            
+            doc.setFontSize(18);
+            doc.text("รายงานคะแนน ภารกิจตะลุยป่าไตรยางศ์", 14, 20);
+            doc.setFontSize(12);
+            doc.text(`ข้อมูล ณ วันที่: ${new Date().toLocaleDateString('th-TH')}`, 14, 28);
+            
+            let columns = ["ชื่อนักเรียน", "ด่าน 1", "ด่าน 2", "ด่าน 3", "บอสไฟต์", "รวม 💎"];
+            let rows = [];
 
-                Swal.fire({
-                    title: 'สำเร็จ!',
-                    text: 'ดาวน์โหลดใบประกาศเรียบร้อยแล้ว',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } catch (err) {
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถสร้างใบประกาศได้', 'error');
+            if (type === 'all') {
+                currentData.forEach(r => rows.push([r.studentName, r.scoreLvl1, r.scoreLvl2, r.scoreLvl3, r.scoreBoss, r.totalScore]));
+            } else {
+                let r = currentData[index];
+                rows.push([r.studentName, r.scoreLvl1, r.scoreLvl2, r.scoreLvl3, r.scoreBoss, r.totalScore]);
             }
+
+            doc.autoTable({ 
+                head: [columns], 
+                body: rows,
+                startY: 35,
+                styles: { font: 'Sarabun', fontStyle: 'normal' },
+                headStyles: { fillColor: [127, 1, 1] } // สีแดงเลือดหมูตามธีม
+            });
+            
+            let fileName = type === 'all' ? 'สรุปคะแนน_ทุกคน.pdf' : `ใบประกาศ_${currentData[index].studentName}.pdf`;
+            doc.save(fileName);
         }
 
         function renderTable(data) {
-            data.reverse();
+            // เรียงให้คนล่าสุดอยู่บนสุด
+            let displayData = [...data].reverse(); 
             let tbody = document.getElementById('tableBody');
             let html = '';
             
-            data.forEach((row, index) => {
+            displayData.forEach((row, reversedIndex) => {
+                // หาค่า index ดั้งเดิมเพื่อส่งให้ PDF
+                let originalIndex = data.length - 1 - reversedIndex; 
+
                 let weaknesses = [];
                 if (row.scoreLvl1 < 10) weaknesses.push("กลาง");
                 if (row.scoreLvl2 < 10) weaknesses.push("สูง");
                 if (row.scoreLvl3 < 20) weaknesses.push("ต่ำ"); 
                 
                 let isPerfect = weaknesses.length === 0 && row.scoreBoss >= 22;
-                
                 let feedback = isPerfect 
                     ? "<span style='color: #4caf50; font-weight: bold;'>✅ ยอดเยี่ยม</span>" 
                     : "<span style='color: #d32f2f; font-weight: bold;'>ซ่อม: " + (weaknesses.length > 0 ? weaknesses.join(", ") : "บอสไฟต์") + "</span>";
 
                 let certBtn = (row.scoreLvl1 > 0 || row.scoreBoss > 0) 
-                    ? `<button class="btn-cert" onclick="generateCert('${row.studentName}', ${row.totalScore})">🎓 โหลดใบประกาศ</button>` 
+                    ? `<button class="btn-cert" onclick="exportPDF('single', ${originalIndex})">🎓 โหลด PDF</button>` 
                     : `<span style="color:#aaa; font-size:12px;">ยังไม่จบภารกิจ</span>`;
 
                 html += `<tr>
-                    <td>${index + 1}</td>
+                    <td>${reversedIndex + 1}</td>
                     <td style="font-weight: bold; color: #7f0101;">${row.studentName || '-'}</td>
                     <td>${row.scoreLvl1 || '0'}</td>
                     <td>${row.scoreLvl2 || '0'}</td>
@@ -430,12 +335,12 @@
             tbody.innerHTML = html;
             
             let now = new Date();
-            document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + now.toLocaleTimeString('th-TH');
+            document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
         function logout() {
-            clearInterval(refreshInterval);
-            loggedInUser = ""; loggedInPass = "";
+            if(loggedInUser) db.ref('rooms/' + loggedInUser + '/students').off(); // หยุดฟังข้อมูล
+            loggedInUser = ""; 
             document.getElementById('login-user').value = "";
             document.getElementById('login-pass').value = "";
             document.getElementById('login-section').style.display = 'block';
