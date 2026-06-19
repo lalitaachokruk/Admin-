@@ -69,16 +69,20 @@
         .manual-step h3 { color: var(--primary); font-size: 18px; margin-bottom: 8px; }
         .manual-step ul { padding-left: 20px; color: #444; font-size: 15px; line-height: 1.6; }
 
-        /* จัดแต่ง Footer ให้อยู่ล่างสุดเสมอ */
+        /* จัดแต่ง Footer ให้อยู่ใต้กล่องหลักและทำเป็นป้ายสวยๆ */
         .footer-credit {
-            margin-top: auto; /* ดันลงล่างสุด */
-            padding-top: 40px;
-            padding-bottom: 20px;
+            margin-top: 30px; 
+            margin-bottom: 20px;
             text-align: center;
-            color: #888;
-            font-size: 14px;
+            color: #5c0000; /* เปลี่ยนสีอักษรให้เข้มและเข้ากับธีม */
+            font-size: 16px; /* ขยายตัวอักษรให้ใหญ่ขึ้นนิดหน่อย */
             font-weight: bold;
-            line-height: 1.8;
+            line-height: 1.6;
+            background: #ffffff; /* ใส่พื้นหลังสีขาว */
+            padding: 15px 40px; /* เพิ่มพื้นที่รอบข้อความ */
+            border-radius: 20px; /* ทำขอบโค้งมน */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* ใส่เงาเบาๆ ให้เด้งขึ้นมา */
+            border: 2px solid #f0f0f0;
         }
 
         /* Responsive สำหรับมือถือ */
