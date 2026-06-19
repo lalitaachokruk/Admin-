@@ -3,242 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Dashboard - ตะลุยป่าไตรยางศ์</title>
+    <title>Admin Login - ตะลุยป่าไตรยางศ์</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #7f0101; /* สีแดงเข้มหลัก */
-            --bg-color: #f5f5f5;
-        }
-
+        :root { --primary: #7f0101; --bg-color: #f5f5f5; }
         * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 20px; }
+        .container { width: 100%; max-width: 1000px; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); padding: 30px; }
+        
+        /* สไตล์หน้า Login & Register */
+        .auth-section { max-width: 400px; margin: 50px auto; text-align: center; }
+        .auth-section h2 { color: var(--primary); margin-bottom: 20px; font-weight: 900; font-size: 28px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
+        .input-group input:focus { border-color: var(--primary); }
+        
+        button.btn-primary { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        button.btn-primary:hover { background-color: #5c0000; }
+        
+        button.btn-text { background: none; border: none; color: #1976d2; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; text-decoration: underline; }
+        
+        .status-msg { margin-top: 15px; font-weight: bold; display: none; }
 
-        body {
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
-
-        .admin-container {
-            width: 100%;
-            max-width: 1000px;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            overflow: hidden;
-        }
-
-        /* ส่วนหัวของ Dashboard */
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 3px solid var(--primary);
-            padding-bottom: 15px;
-        }
-
-        h2 {
-            color: var(--primary);
-            font-size: 28px;
-            font-weight: 900;
-        }
-
-        .live-status {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-
-        .badge-live {
-            background-color: #d32f2f;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            animation: pulse 1.5s infinite;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .badge-live::before {
-            content: '';
-            width: 10px;
-            height: 10px;
-            background-color: #fff;
-            border-radius: 50%;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
-        }
-
-        #last-update {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        /* ตารางคะแนน */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-        }
-
-        th {
-            background-color: var(--primary);
-            color: #ffffff;
-            padding: 15px;
-            font-size: 16px;
-            white-space: nowrap;
-        }
-
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eeeeee;
-            color: #333;
-            font-size: 15px;
-            vertical-align: middle;
-        }
-
-        tr:hover { background-color: #fdf2f2; }
-
-        .total-score {
-            font-weight: 900;
-            color: #f57f17;
-            font-size: 18px;
-        }
-
-        #loading {
-            text-align: center;
-            color: var(--primary);
-            font-size: 18px;
-            font-weight: bold;
-            padding: 30px;
-        }
-
-        /* จัด Layout ให้มือถือดูง่ายขึ้น */
-        @media (max-width: 768px) {
-            .header-container { flex-direction: column; gap: 15px; text-align: center; }
-            .live-status { align-items: center; }
-            h2 { font-size: 22px; }
-        }
+        /* สไตล์ตาราง Dashboard (ซ่อนไว้ก่อน) */
+        #dashboard-section { display: none; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; }
+        .header-container h2 { color: var(--primary); font-size: 24px; font-weight: 900; }
+        .live-status { text-align: right; }
+        .badge-live { background-color: #d32f2f; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; animation: pulse 1.5s infinite; display: inline-flex; align-items: center; gap: 8px; }
+        .badge-live::before { content: ''; width: 10px; height: 10px; background-color: #fff; border-radius: 50%; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th { background-color: var(--primary); color: white; padding: 12px; white-space: nowrap; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .table-responsive { overflow-x: auto; }
+        
+        @media (max-width: 768px) { .header-container { flex-direction: column; gap: 15px; text-align: center; } .live-status { text-align: center; } }
     </style>
 </head>
 <body>
 
-    <div class="admin-container">
-        <div class="header-container">
-            <h2>📊 กระดานคะแนนเรียลไทม์</h2>
-            <div class="live-status">
-                <div class="badge-live">LIVE อัปเดตอัตโนมัติ</div>
-                <div id="last-update">อัปเดตล่าสุด: กำลังเชื่อมต่อ...</div>
+    <div class="container">
+        <div id="login-section" class="auth-section">
+            <h2>🔒 เข้าสู่ระบบ</h2>
+            <div class="input-group">
+                <label>ชื่อผู้ใช้งาน (รหัสครู)</label>
+                <input type="text" id="login-user" placeholder="เช่น kru_a">
             </div>
+            <div class="input-group">
+                <label>รหัสผ่าน</label>
+                <input type="password" id="login-pass" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" onclick="attemptLogin()">เข้าสู่ระบบ</button>
+            <button class="btn-text" onclick="toggleAuth('register')">ยังไม่มีบัญชี? สร้างห้องเรียนใหม่ (สำหรับครู)</button>
+            <div id="login-error" class="status-msg"></div>
         </div>
-        
-        <div id="loading">กำลังดึงข้อมูลจากฐานข้อมูล... ⏳</div>
 
-        <div class="table-responsive">
-            <table id="scoreTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>ลำดับ</th>
-                        <th>ชื่อนักสำรวจ</th>
-                        <th>ด่าน 1 (กลาง)</th>
-                        <th>ด่าน 2 (สูง)</th>
-                        <th>ด่าน 3 (ต่ำ)</th>
-                        <th>บอสไฟต์</th>
-                        <th>เพชรรวม 💎</th>
-                        <th>การประเมิน</th> </tr>
-                </thead>
-                <tbody id="tableBody">
-                    </tbody>
-            </table>
+        <div id="register-section" class="auth-section" style="display: none;">
+            <h2>📝 สร้างห้องเรียนใหม่</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">*ชื่อผู้ใช้ จะถูกนำไปให้เด็กกรอกก่อนเริ่มเกม</p>
+            <div class="input-group">
+                <label>ตั้งชื่อผู้ใช้งาน (ห้ามเว้นวรรค)</label>
+                <input type="text" id="reg-user" placeholder="เช่น kru_b">
+            </div>
+            <div class="input-group">
+                <label>ตั้งรหัสผ่าน</label>
+                <input type="password" id="reg-pass" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" onclick="attemptRegister()" style="background-color: #1976d2;">ลงทะเบียนสร้างห้อง</button>
+            <button class="btn-text" onclick="toggleAuth('login')">มีบัญชีอยู่แล้ว? กลับไปหน้าเข้าสู่ระบบ</button>
+            <div id="reg-error" class="status-msg"></div>
+        </div>
+
+        <div id="dashboard-section">
+            <div class="header-container">
+                <h2>📊 กระดานคะแนน: ห้อง <span id="display-teacher"></span></h2>
+                <div class="live-status">
+                    <div class="badge-live">LIVE อัปเดตอัตโนมัติ</div>
+                    <div id="last-update" style="font-size: 12px; margin-top:5px; color:#666;">กำลังเชื่อมต่อ...</div>
+                </div>
+            </div>
+            <button onclick="logout()" style="margin-bottom:15px; padding:8px 15px; background:#666; color:white; border:none; border-radius:5px; cursor:pointer;">🚪 ออกจากระบบ</button>
+            
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ลำดับ</th><th>ชื่อนักเรียน</th><th>ด่าน 1</th><th>ด่าน 2</th><th>ด่าน 3</th><th>บอสไฟต์</th><th>รวม 💎</th><th>ประเมิน</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        // *** นำ URL Web App ของคุณมาใส่ตรงนี้ ***
+        // *** วาง URL Apps Script ตรงนี้ ***
         const gasUrl = "https://script.google.com/macros/s/AKfycbxQHu86mWczbFPaJ_JGHih5nIHxMye7S01qevDns2KSYDs5_lHWVOIFqJ8TUHc15TfY/exec";
+        
+        let loggedInUser = "";
+        let loggedInPass = "";
+        let refreshInterval;
 
-        // ฟังก์ชันดึงและสร้างตาราง
-        async function fetchScores() {
-            try {
-                let response = await fetch(gasUrl + "?action=getScores");
-                let responseData = await response.json();
-                
-                if(responseData.status === "success") {
-                    let data = responseData.data;
-                    data.reverse(); // เอาคนล่าสุดขึ้นก่อน
-
-                    let tbody = document.getElementById('tableBody');
-                    let newHtml = '';
-                    
-                    data.forEach((row, index) => {
-                        
-                        // --- ส่วนที่เพิ่มใหม่: ระบบประเมินจุดอ่อนให้คุณครู ---
-                        let weaknesses = [];
-                        // ด่าน 1 และ 2 เกณฑ์ผ่านคือ 10
-                        if (row.scoreLvl1 < 10) weaknesses.push("กลาง");
-                        if (row.scoreLvl2 < 10) weaknesses.push("สูง");
-                        // ด่าน 3 มี 2 รอบ (ต่ำเดี่ยว+ต่ำคู่) เกณฑ์ผ่านรวมคือ 20 (รอบละ 10)
-                        if (row.scoreLvl3 < 20) weaknesses.push("ต่ำ"); 
-                        
-                        let feedback = "";
-                        if (weaknesses.length === 0) {
-                            feedback = "<span style='color: #4caf50; font-weight: bold; background: #e8f5e9; padding: 4px 10px; border-radius: 15px;'>✅ ยอดเยี่ยม</span>";
-                        } else {
-                            feedback = "<span style='color: #d32f2f; font-weight: bold; background: #ffebee; padding: 4px 10px; border-radius: 15px;'>ซ่อม: อักษร" + weaknesses.join(", ") + "</span>";
-                        }
-                        // ------------------------------------------------
-
-                        newHtml += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td style="font-weight: bold; color: #7f0101;">${row.studentName || '-'}</td>
-                                <td>${row.scoreLvl1 || '0'}</td>
-                                <td>${row.scoreLvl2 || '0'}</td>
-                                <td>${row.scoreLvl3 || '0'}</td>
-                                <td>${row.scoreBoss || '0'}</td>
-                                <td class="total-score">${row.totalScore || '0'}</td>
-                                
-                                <td>${feedback}</td>
-                            </tr>
-                        `;
-                    });
-
-                    tbody.innerHTML = newHtml;
-
-                    // อัปเดตเวลา
-                    let now = new Date();
-                    let timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + timeString;
-
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('scoreTable').style.display = 'table';
-                }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById('last-update').innerText = "สถานะ: เชื่อมต่อขัดข้อง รอสักครู่...";
+        function toggleAuth(type) {
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('reg-error').style.display = 'none';
+            if(type === 'register') {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('register-section').style.display = 'block';
+            } else {
+                document.getElementById('register-section').style.display = 'none';
+                document.getElementById('login-section').style.display = 'block';
             }
         }
 
-        fetchScores();
-        setInterval(fetchScores, 5000);
+        async function attemptRegister() {
+            let user = document.getElementById('reg-user').value.trim();
+            let pass = document.getElementById('reg-pass').value.trim();
+            let errorDiv = document.getElementById('reg-error');
+            
+            if(!user || !pass) { errorDiv.innerText = "กรุณากรอกข้อมูลให้ครบถ้วน"; errorDiv.style.color = "#d32f2f"; errorDiv.style.display = "block"; return; }
+            if(user.includes(" ")) { errorDiv.innerText = "ชื่อผู้ใช้ห้ามเว้นวรรคครับ"; errorDiv.style.color = "#d32f2f"; errorDiv.style.display = "block"; return; }
+            
+            errorDiv.innerText = "กำลังสร้างห้องเรียนและชีตข้อมูล... ⏳";
+            errorDiv.style.color = "#ff9800";
+            errorDiv.style.display = "block";
+
+            try {
+                let response = await fetch(gasUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "register", username: user, password: pass })
+                });
+                let resData = await response.json();
+                
+                if(resData.status === "success") {
+                    errorDiv.innerText = "✅ " + resData.message;
+                    errorDiv.style.color = "#4caf50";
+                    setTimeout(() => { toggleAuth('login'); document.getElementById('login-user').value = user; }, 2000);
+                } else {
+                    errorDiv.innerText = "❌ " + resData.message;
+                    errorDiv.style.color = "#d32f2f";
+                }
+            } catch (err) {
+                errorDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                errorDiv.style.color = "#d32f2f";
+            }
+        }
+
+        async function attemptLogin() {
+            let user = document.getElementById('login-user').value.trim();
+            let pass = document.getElementById('login-pass').value.trim();
+            let errorDiv = document.getElementById('login-error');
+            
+            if(!user || !pass) { errorDiv.innerText = "กรุณากรอกข้อมูลให้ครบถ้วน"; errorDiv.style.display = "block"; return; }
+            
+            errorDiv.innerText = "กำลังตรวจสอบ... ⏳";
+            errorDiv.style.color = "#ff9800";
+            errorDiv.style.display = "block";
+
+            try {
+                let response = await fetch(`${gasUrl}?action=login&username=${user}&password=${pass}`);
+                let resData = await response.json();
+                
+                if(resData.status === "success") {
+                    loggedInUser = user;
+                    loggedInPass = pass;
+                    document.getElementById('display-teacher').innerText = resData.teacherName;
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('dashboard-section').style.display = 'block';
+                    
+                    renderTable(resData.data);
+                    refreshInterval = setInterval(fetchDataLive, 5000);
+                } else {
+                    errorDiv.innerText = "❌ " + resData.message;
+                    errorDiv.style.color = "#d32f2f";
+                }
+            } catch (err) {
+                errorDiv.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                errorDiv.style.color = "#d32f2f";
+            }
+        }
+
+        async function fetchDataLive() {
+            try {
+                let response = await fetch(`${gasUrl}?action=login&username=${loggedInUser}&password=${loggedInPass}`);
+                let resData = await response.json();
+                if(resData.status === "success") renderTable(resData.data);
+            } catch (err) { console.log(err); }
+        }
+
+        function renderTable(data) {
+            data.reverse();
+            let tbody = document.getElementById('tableBody');
+            let html = '';
+            
+            data.forEach((row, index) => {
+                let weaknesses = [];
+                if (row.scoreLvl1 < 10) weaknesses.push("กลาง");
+                if (row.scoreLvl2 < 10) weaknesses.push("สูง");
+                if (row.scoreLvl3 < 20) weaknesses.push("ต่ำ"); 
+                
+                let feedback = weaknesses.length === 0 
+                    ? "<span style='color: #4caf50; font-weight: bold;'>✅ ยอดเยี่ยม</span>" 
+                    : "<span style='color: #d32f2f; font-weight: bold;'>ซ่อม: " + weaknesses.join(", ") + "</span>";
+
+                html += `<tr>
+                    <td>${index + 1}</td>
+                    <td style="font-weight: bold; color: #7f0101;">${row.studentName || '-'}</td>
+                    <td>${row.scoreLvl1 || '0'}</td>
+                    <td>${row.scoreLvl2 || '0'}</td>
+                    <td>${row.scoreLvl3 || '0'}</td>
+                    <td>${row.scoreBoss || '0'}</td>
+                    <td style="font-weight: 900; color: #f57f17;">${row.totalScore || '0'}</td>
+                    <td>${feedback}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+            
+            let now = new Date();
+            document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + now.toLocaleTimeString('th-TH');
+        }
+
+        function logout() {
+            clearInterval(refreshInterval);
+            loggedInUser = ""; loggedInPass = "";
+            document.getElementById('login-user').value = "";
+            document.getElementById('login-pass').value = "";
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
+        }
     </script>
 </body>
 </html>
