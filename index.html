@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dashboard - ตะลุยป่าไตรยางศ์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7f0101; /* สีแดงเข้มหลัก */
+            --bg-color: #f5f5f5;
+        }
+
+        * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .admin-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            overflow: hidden;
+        }
+
+        /* ส่วนหัวของ Dashboard */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .live-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .badge-live {
+            background-color: #d32f2f;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            animation: pulse 1.5s infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-live::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        }
+
+        #last-update {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* ตารางคะแนน */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 15px;
+            font-size: 16px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eeeeee;
+            color: #333;
+            font-size: 15px;
+            vertical-align: middle;
+        }
+
+        tr:hover { background-color: #fdf2f2; }
+
+        .total-score {
+            font-weight: 900;
+            color: #f57f17;
+            font-size: 18px;
+        }
+
+        #loading {
+            text-align: center;
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: bold;
+            padding: 30px;
+        }
+
+        /* จัด Layout ให้มือถือดูง่ายขึ้น */
+        @media (max-width: 768px) {
+            .header-container { flex-direction: column; gap: 15px; text-align: center; }
+            .live-status { align-items: center; }
+            h2 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <div class="header-container">
+            <h2>📊 กระดานคะแนนเรียลไทม์</h2>
+            <div class="live-status">
+                <div class="badge-live">LIVE อัปเดตอัตโนมัติ</div>
+                <div id="last-update">อัปเดตล่าสุด: กำลังเชื่อมต่อ...</div>
+            </div>
+        </div>
+        
+        <div id="loading">กำลังดึงข้อมูลจากฐานข้อมูล... ⏳</div>
+
+        <div class="table-responsive">
+            <table id="scoreTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ลำดับ</th>
+                        <th>ชื่อนักสำรวจ</th>
+                        <th>ด่าน 1 (กลาง)</th>
+                        <th>ด่าน 2 (สูง)</th>
+                        <th>ด่าน 3 (ต่ำ)</th>
+                        <th>บอสไฟต์</th>
+                        <th>เพชรรวม 💎</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // *** นำ URL Web App ของคุณมาใส่ตรงนี้ ***
+        const gasUrl = "https://script.google.com/macros/s/AKfycbxQHu86mWczbFPaJ_JGHih5nIHxMye7S01qevDns2KSYDs5_lHWVOIFqJ8TUHc15TfY/exec";
+
+        // ฟังก์ชันดึงและสร้างตาราง
+        async function fetchScores() {
+            try {
+                // ขอข้อมูลแบบเจาะจงคะแนน (?action=getScores)
+                let response = await fetch(gasUrl + "?action=getScores");
+                let responseData = await response.json();
+                
+                if(responseData.status === "success") {
+                    let data = responseData.data;
+                    
+                    // กลับด้าน Array ให้คนล่าสุดขึ้นข้างบน (ถ้าอยากให้เรียงลำดับแบบเดิมให้เอา .reverse() ออกครับ)
+                    data.reverse(); 
+
+                    let tbody = document.getElementById('tableBody');
+                    // สร้าง HTML ตารางใหม่ทั้งหมดเก็บไว้ในตัวแปรก่อน แล้วค่อยยัดลงไปทีเดียว (ลดอาการจอกะพริบ)
+                    let newHtml = '';
+                    
+                    data.forEach((row, index) => {
+                        newHtml += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td style="font-weight: bold; color: #7f0101;">${row.studentName || '-'}</td>
+                                <td>${row.scoreLvl1 || '0'}</td>
+                                <td>${row.scoreLvl2 || '0'}</td>
+                                <td>${row.scoreLvl3 || '0'}</td>
+                                <td>${row.scoreBoss || '0'}</td>
+                                <td class="total-score">${row.totalScore || '0'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = newHtml;
+
+                    // อัปเดตเวลาล่าสุด
+                    let now = new Date();
+                    let timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    document.getElementById('last-update').innerText = "อัปเดตล่าสุด: " + timeString;
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('scoreTable').style.display = 'table';
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById('last-update').innerText = "สถานะ: เชื่อมต่อขัดข้อง รอสักครู่...";
+            }
+        }
+
+        // 1. ดึงข้อมูลครั้งแรกทันทีที่เปิดหน้าเว็บ
+        fetchScores();
+
+        // 2. ตั้งเวลาดึงข้อมูลซ้ำอัตโนมัติ ทุกๆ 5 วินาที (5000 มิลลิวินาที)
+        setInterval(fetchScores, 5000);
+
+    </script>
+
+</body>
+</html>
